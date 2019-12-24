@@ -1,0 +1,8 @@
+[package]
+name = "billiards"
+version = "0.1.0"
+authors = ["faeraga <faeraga@faec.me>"]
+
+[dependencies]
+rug = "1.6.0"
+serde_json = "1.0"
