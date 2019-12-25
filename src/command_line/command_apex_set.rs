@@ -1,4 +1,5 @@
 use super::CommandLineError;
+use crate::data::apex_set;
 
 pub fn run(args: &[String]) -> Result<(), CommandLineError> {
   match args.first() {
@@ -9,7 +10,7 @@ pub fn run(args: &[String]) -> Result<(), CommandLineError> {
       match &command[..] {
         "create" => {
           println!("create");
-          Ok(())
+          create(&args[1..])
         },
         "delete" => {
           println!("delete");
@@ -27,3 +28,10 @@ pub fn run(args: &[String]) -> Result<(), CommandLineError> {
     },
   }
 }
+
+fn create(args: &[String]) -> Result<(), CommandLineError> {
+  let apex_set = apex_set::new_apex_set();
+  println!("apexSet create: {:?}", apex_set);
+  Ok(())
+}
+

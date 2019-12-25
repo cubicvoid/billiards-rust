@@ -1,4 +1,4 @@
-mod apex_set;
+mod command_apex_set;
 
 use std::fmt;
 use std::error::Error;
@@ -13,7 +13,7 @@ pub fn run(args: &[String]) -> Result<(), CommandLineError> {
       match &command[..] {
         "apexSet" => {
           println!("apexSet");
-          apex_set::run(&args[1..])
+          command_apex_set::run(&args[1..])
         },
         "pathSet" => {
           println!("pathSet");
@@ -33,7 +33,8 @@ mod tests {
 
   #[test]
   fn test_run() {
-    run(&[]);
+    let result = run(&[]);
+    result.expect_err("run with empty arguments should yield an error");
   }
 }
 

@@ -9,5 +9,8 @@ mod geometry;
 fn main() {
   let args: Vec<String> = env::args().collect();
   //println!("{:?}", args);
-  command_line::run(&args[1..]);
+  let result = command_line::run(&args[1..]);
+  if let Err(err) = result {
+    println!("Error: {}", err)
+  }
 }

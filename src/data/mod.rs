@@ -1,3 +1,3 @@
-mod apex_set;
+pub mod apex_set;
 
-use crate::geometry::*;
+//use crate::geometry::*;
