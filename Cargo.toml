@@ -4,5 +4,8 @@ version = "0.1.0"
 authors = ["faeraga <faeraga@faec.me>"]
 
 [dependencies]
+chrono = { version ="0.4", features = ["serde"] }
+maplit = "1.0.2"
 rug = "1.6.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

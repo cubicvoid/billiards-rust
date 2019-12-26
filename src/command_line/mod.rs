@@ -5,7 +5,7 @@ use std::error::Error;
 //use std::boxed::Box;
 
 
-pub fn run(args: &[String]) -> Result<(), CommandLineError> {
+pub fn run(args: &[String]) -> Result<()> {
   println!("hello {:?}", args);
   match args.first() {
     None => Err(CommandLineError::new(&format!("Expected command"))),
@@ -39,24 +39,40 @@ mod tests {
 }
 
 #[derive(Debug)]
-pub struct CommandLineError {
-  details: String
+pub enum CommandLineError {
+  IOError(std::io::Error),
+  BadCommand(String),
 }
 
 impl CommandLineError {
   fn new(msg: &str) -> CommandLineError {
-    CommandLineError{details: msg.to_string()}
+    CommandLineError::BadCommand(msg.to_string())
   }
 }
 
 impl fmt::Display for CommandLineError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{}", self.details)
+    match &self {
+      CommandLineError::IOError(e) => e.fmt(f),
+      CommandLineError::BadCommand(s) => write!(f, "{}", s)
+    }
   }
 }
 
 impl Error for CommandLineError {
   fn description(&self) -> &str {
-      &self.details
+    match &self {
+      CommandLineError::IOError(e) => e.description(),
+      CommandLineError::BadCommand(s) => s
+    }
   }
 }
+
+impl From<std::io::Error> for CommandLineError {
+  fn from(e: std::io::Error) -> Self {
+      CommandLineError::IOError(e)
+  }
+}
+
+
+pub type Result<T> = std::result::Result<T, CommandLineError>;
