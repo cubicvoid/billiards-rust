@@ -1,12 +1,24 @@
-mod command_apex_set;
+//mod command_apex_set;
 
-use std::fmt;
+use std::env;
 use std::error::Error;
-use clap::{Arg, App, SubCommand};
-//use std::boxed::Box;
+use std::fmt;
+use std::path::PathBuf;
+
+use clap::{Arg, ArgMatches, App, SubCommand};
+
+use data::apex_set;
+
+pub fn run() {
+  let cmd = command();
+  let matches = cmd.get_matches();
+
+  root_run(&matches);
+}
 
 fn subcommand_apexset_create<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("create")
+    .about("Creates a new random apex set")
     .arg(Arg::with_name("name")
       .index(1)
       .required(true)
@@ -46,10 +58,12 @@ fn subcommand_apexset_create<'a, 'b>() -> App<'a, 'b> {
 
 fn subcommand_apexset_list<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("list")
+    .about("Lists all apex sets")
 }
 
 fn subcommand_apexset_delete<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("delete")
+    .about("Deletes an apex set")
     .arg(Arg::with_name("name")
       .index(1)
       .required(true)
@@ -59,6 +73,7 @@ fn subcommand_apexset_delete<'a, 'b>() -> App<'a, 'b> {
 
 fn subcommand_apexset<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("apexset")
+    .about("Manipulates sets of random apexes")
     .subcommands(vec![
       subcommand_apexset_create(),
       subcommand_apexset_list(),
@@ -66,41 +81,52 @@ fn subcommand_apexset<'a, 'b>() -> App<'a, 'b> {
     ])
 }
 
-pub fn run() {
-  let matches = App::new("billiards-rs")
+fn command<'a, 'b>() -> App<'a, 'b> {
+  App::new("billiards-rs")
     .version("0.0.x")
     .subcommand(subcommand_apexset())
-    .get_matches();
+}
 
-  if let Some(matches) = matches.subcommand_matches("apexset") {
-    println!("apexset");
-    if let Some(matches) = matches.subcommand_matches("create") {
-      println!("create");
-      let overwrite = matches.occurrences_of("overwrite");
-      println!("overwrite: {}", overwrite > 0);
-    }
+fn root_run(matches: &ArgMatches) {
+  match matches.subcommand() {
+    ("apexset", Some(sub_m)) => { apexset_run(sub_m) },
+    _ => { println!("{}", matches.usage()); }
   }
 }
 
-pub fn run_old(args: &[String]) -> Result<()> {
-  match args.first() {
-    None => Err(CommandLineError::new(&format!("Expected command"))),
-    Some(command) => {
-      match &command[..] {
-        "apexSet" => {
-          println!("apexSet");
-          command_apex_set::run(&args[1..])
-        },
-        "pathSet" => {
-          println!("pathSet");
-          Ok(())
-        },
-        _ => {
-          Err(CommandLineError::new(&format!("Unknown command '{}'", command)))
-        },
-      }
-    },
+fn apexset_run(matches: &ArgMatches) {
+  let apex_set_manager = {
+    let mut path: PathBuf = env::current_dir().unwrap();//?;
+    path.push("data");
+    path.push("apex_set");
+    apex_set::manager(path)
+  };
+  match matches.subcommand() {
+    ("create", Some(sub_m)) => { apexset_create_run(&apex_set_manager, sub_m) },
+    ("list", Some(sub_m)) => { apexset_list_run(&apex_set_manager, sub_m) },
+    ("delete", Some(sub_m)) => { apexset_delete_run(&apex_set_manager, sub_m) },
+    _ => { println!("{}", matches.usage()); }
   }
+}
+
+fn apexset_create_run(manager: &apex_set::Manager, matches: &ArgMatches) {
+  let name = matches.value_of("name").unwrap();
+  let count = matches.value_of("count").unwrap().parse::<u32>().unwrap();
+  let grid_density = matches.value_of("grid_density").map(|s| s.parse::<u32>().unwrap()).unwrap_or(32);
+  let overwrite = matches.is_present("overwrite");
+  println!("creating apex set '{}' with count {} and density {}, overwrite: {}", name, count, grid_density, overwrite);
+  let apex_set = manager.save(name, overwrite,
+    apex_set::random_from_grid(grid_density, count));
+  println!("apexSet create: {:?}", apex_set);
+}
+
+fn apexset_list_run(manager: &apex_set::Manager, matches: &ArgMatches) {
+  println!("listing apex sets");
+}
+
+fn apexset_delete_run(manager: &apex_set::Manager, matches: &ArgMatches) {
+  let name = matches.value_of("name").unwrap();
+  println!("deleting apex set '{}'", name);
 }
 
 #[cfg(test)]

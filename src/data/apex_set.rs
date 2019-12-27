@@ -59,13 +59,13 @@ type PointGenerator = Box<dyn Fn(&mut Metadata) -> Vec<Point>>;
 impl Manager {
   /// saves an `ApexSet` with the given name.
   /// 
-  /// if `_name` is `None`, a unique name is generated.
-  pub fn save(&self, _name: Option<&str>, points_fn: PointGenerator)
+  /// if `overwrite` is true, it will replace existing apex sets with the
+  /// new one. otherwise, saving with an existing name will return an error.
+  pub fn save(&self, name: &str, overwrite: bool, points_fn: PointGenerator)
       -> Result<ApexSet> {
     let mut metadata = Metadata::new();
     let points = points_fn(&mut metadata);
         
-    let name = _name.unwrap_or("test_apex_set");
     std::fs::create_dir_all(&self._dir_path(&name))?;
     let count: u32 = points.len().try_into().unwrap();
     let info: Info = Info{
