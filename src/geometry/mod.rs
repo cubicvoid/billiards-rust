@@ -1,3 +1,6 @@
-struct Vec2<T>(T, T);
+use serde::{Deserialize, Serialize};
 
-struct Vec3<T>(T, T, T);
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Vec2<T>(pub T, pub T);
+
+//struct Vec3<T>(T, T, T);

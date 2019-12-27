@@ -1,7 +1,9 @@
 //extern crate billiards;
 
 extern crate chrono;
-#[macro_use] extern crate maplit;
+//#[macro_use] extern crate maplit;
+extern crate rug;
+extern crate rand;
 extern crate serde;
 extern crate serde_json;
 

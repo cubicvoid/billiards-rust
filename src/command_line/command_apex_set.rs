@@ -36,7 +36,7 @@ pub fn run(args: &[String]) -> Result<()> {
 
 struct CreateArgs<'a> {
   name: Option<&'a str>,
-  grid_density: Option<u64>,
+  grid_density: Option<u32>,
   count: Option<u32>,
 }
 
@@ -44,8 +44,8 @@ impl<'a> CreateArgs<'a> {
   fn parse(_args: &[String]) -> CreateArgs {
     CreateArgs{
       name: Some("testSet"),
-      grid_density: Some(1000000000),
-      count: Some(100),
+      grid_density: None,
+      count: None,
     }
   }
 }
@@ -61,7 +61,7 @@ fn create(args: &[String]) -> Result<()> {
   let apex_set = apex_set_manager.save(
     create_args.name,
     apex_set::random_from_grid(
-      create_args.grid_density.unwrap_or(1000000000),
+      create_args.grid_density.unwrap_or(32),
       create_args.count.unwrap_or(100)));
   println!("apexSet create: {:?}", apex_set);
   Ok(())
