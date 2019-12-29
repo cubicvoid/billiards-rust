@@ -1,21 +1,25 @@
-use std::env;
-use std::error::Error;
-use std::fmt;
+mod tabulator;
+
 use std::path::PathBuf;
 
-use chrono::prelude::*;
 use clap::{Arg, ArgMatches, App, SubCommand};
 
 use data::point_set;
 
-pub fn run(root_path: &PathBuf) {
-  let cmd = command();
-  let matches = cmd.get_matches();
+use self::tabulator::Tabulator;
 
-  root_run(root_path, &matches);
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+  SubCommand::with_name("pointset")
+    .about("Manipulates sets of random points")
+    .subcommands(vec![
+      subcommand_create(),
+      subcommand_list(),
+      subcommand_print(),
+      subcommand_delete(),
+    ])
 }
 
-fn subcommand_pointset_create<'a, 'b>() -> App<'a, 'b> {
+pub fn subcommand_create<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("create")
     .about("Creates a new random point set")
     .arg(Arg::with_name("name")
@@ -55,12 +59,12 @@ fn subcommand_pointset_create<'a, 'b>() -> App<'a, 'b> {
     )       
 }
 
-fn subcommand_pointset_list<'a, 'b>() -> App<'a, 'b> {
+pub fn subcommand_list<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("list")
     .about("Lists all point sets")
 }
 
-fn subcommand_pointset_print<'a, 'b>() -> App<'a, 'b> {
+pub fn subcommand_print<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("print")
     .about("Prints a specified point set")
     .arg(Arg::with_name("name")
@@ -70,7 +74,7 @@ fn subcommand_pointset_print<'a, 'b>() -> App<'a, 'b> {
     )
 }
 
-fn subcommand_pointset_delete<'a, 'b>() -> App<'a, 'b> {
+pub fn subcommand_delete<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("delete")
     .about("Deletes a point set")
     .arg(Arg::with_name("name")
@@ -80,32 +84,7 @@ fn subcommand_pointset_delete<'a, 'b>() -> App<'a, 'b> {
     )
 }
 
-fn subcommand_pointset<'a, 'b>() -> App<'a, 'b> {
-  SubCommand::with_name("pointset")
-    .about("Manipulates sets of random points")
-    .subcommands(vec![
-      subcommand_pointset_create(),
-      subcommand_pointset_list(),
-      subcommand_pointset_print(),
-      subcommand_pointset_delete(),
-    ])
-}
-
-fn command<'a, 'b>() -> App<'a, 'b> {
-  App::new("billiards-rs")
-    .version("0.0.x")
-    .subcommand(subcommand_pointset())
-}
-
-fn root_run(root_path: &PathBuf, matches: &ArgMatches) {
-  match matches.subcommand() {
-    ("pointset", Some(sub_m)) => { pointset_run(root_path, sub_m) },
-    _ => { eprintln!("{}", matches.usage()); }
-  }
-}
-
-fn pointset_run(root_path: &PathBuf, matches: &ArgMatches) {
-
+pub fn run(root_path: &PathBuf, matches: &ArgMatches) {
   let point_set_manager = {
     let mut path = root_path.to_owned();
     //let mut path: PathBuf = env::current_dir().unwrap();//?;
@@ -114,15 +93,15 @@ fn pointset_run(root_path: &PathBuf, matches: &ArgMatches) {
     point_set::manager(path)
   };
   match matches.subcommand() {
-    ("create", Some(sub_m)) => { pointset_create_run(&point_set_manager, sub_m) },
-    ("list", Some(sub_m)) => { pointset_list_run(&point_set_manager, sub_m) },
-    ("print", Some(sub_m)) => { pointset_print_run(&point_set_manager, sub_m) },
-    ("delete", Some(sub_m)) => { pointset_delete_run(&point_set_manager, sub_m) },
+    ("create", Some(sub_m)) => { run_create(&point_set_manager, sub_m) },
+    ("list", Some(sub_m)) => { run_list(&point_set_manager, sub_m) },
+    ("print", Some(sub_m)) => { run_print(&point_set_manager, sub_m) },
+    ("delete", Some(sub_m)) => { run_delete(&point_set_manager, sub_m) },
     _ => { eprintln!("{}", matches.usage()); }
   }
 }
 
-fn pointset_create_run(manager: &point_set::Manager, matches: &ArgMatches) {
+pub fn run_create(manager: &point_set::Manager, matches: &ArgMatches) {
   let name = matches.value_of("name").unwrap();
   let count = matches.value_of("count").unwrap().parse::<u32>().unwrap();
   let grid_density = matches.value_of("grid_density").map(|s| s.parse::<u32>().unwrap()).unwrap_or(32);
@@ -135,11 +114,7 @@ fn pointset_create_run(manager: &point_set::Manager, matches: &ArgMatches) {
   }
 }
 
-mod tabulator;
-
-use self::tabulator::Tabulator;
-
-fn pointset_list_run(manager: &point_set::Manager, matches: &ArgMatches) {
+pub fn run_list(manager: &point_set::Manager, matches: &ArgMatches) {
   let mut point_sets = manager.list().unwrap();
   let mut table = Tabulator::new(vec![
     String::from("name"),
@@ -154,7 +129,7 @@ fn pointset_list_run(manager: &point_set::Manager, matches: &ArgMatches) {
   table.display();
 }
 
-fn pointset_print_run(manager: &point_set::Manager, matches: &ArgMatches) {
+pub fn run_print(manager: &point_set::Manager, matches: &ArgMatches) {
   let name = matches.value_of("name").unwrap();
   let result = manager.load(name);
   match result {
@@ -167,56 +142,8 @@ fn pointset_print_run(manager: &point_set::Manager, matches: &ArgMatches) {
   }
 }
 
-fn pointset_delete_run(manager: &point_set::Manager, matches: &ArgMatches) {
+pub fn run_delete(manager: &point_set::Manager, matches: &ArgMatches) {
   let name = matches.value_of("name").unwrap();
-  eprintln!("deleting point set '{}'", name);
+  eprintln!("deleting point sets hasn't been implemented");
+  //eprintln!("deleting point set '{}'", name);
 }
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn test_run() {
-    //let result = run(&[]);
-    //result.expect_err("run with empty arguments should yield an error");
-  }
-}
-
-#[derive(Debug)]
-pub enum CommandLineError {
-  IOError(std::io::Error),
-  BadCommand(String),
-}
-
-impl CommandLineError {
-  fn new(msg: &str) -> CommandLineError {
-    CommandLineError::BadCommand(msg.to_string())
-  }
-}
-
-impl fmt::Display for CommandLineError {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match &self {
-      CommandLineError::IOError(e) => e.fmt(f),
-      CommandLineError::BadCommand(s) => write!(f, "{}", s)
-    }
-  }
-}
-
-impl Error for CommandLineError {
-  fn description(&self) -> &str {
-    match &self {
-      CommandLineError::IOError(e) => e.description(),
-      CommandLineError::BadCommand(s) => s
-    }
-  }
-}
-
-impl From<std::io::Error> for CommandLineError {
-  fn from(e: std::io::Error) -> Self {
-      CommandLineError::IOError(e)
-  }
-}
-
-pub type Result<T> = std::result::Result<T, CommandLineError>;
