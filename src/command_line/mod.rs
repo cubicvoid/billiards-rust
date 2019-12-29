@@ -5,15 +5,14 @@ use std::path::PathBuf;
 
 use chrono::prelude::*;
 use clap::{Arg, ArgMatches, App, SubCommand};
-use colored::*;
 
 use data::point_set;
 
-pub fn run() {
+pub fn run(root_path: &PathBuf) {
   let cmd = command();
   let matches = cmd.get_matches();
 
-  root_run(&matches);
+  root_run(root_path, &matches);
 }
 
 fn subcommand_pointset_create<'a, 'b>() -> App<'a, 'b> {
@@ -61,6 +60,16 @@ fn subcommand_pointset_list<'a, 'b>() -> App<'a, 'b> {
     .about("Lists all point sets")
 }
 
+fn subcommand_pointset_print<'a, 'b>() -> App<'a, 'b> {
+  SubCommand::with_name("print")
+    .about("Prints a specified point set")
+    .arg(Arg::with_name("name")
+      .index(1)
+      .required(true)
+      .help("The name of the point set to print.")
+    )
+}
+
 fn subcommand_pointset_delete<'a, 'b>() -> App<'a, 'b> {
   SubCommand::with_name("delete")
     .about("Deletes a point set")
@@ -77,6 +86,7 @@ fn subcommand_pointset<'a, 'b>() -> App<'a, 'b> {
     .subcommands(vec![
       subcommand_pointset_create(),
       subcommand_pointset_list(),
+      subcommand_pointset_print(),
       subcommand_pointset_delete(),
     ])
 }
@@ -87,16 +97,18 @@ fn command<'a, 'b>() -> App<'a, 'b> {
     .subcommand(subcommand_pointset())
 }
 
-fn root_run(matches: &ArgMatches) {
+fn root_run(root_path: &PathBuf, matches: &ArgMatches) {
   match matches.subcommand() {
-    ("pointset", Some(sub_m)) => { pointset_run(sub_m) },
-    _ => { println!("{}", matches.usage()); }
+    ("pointset", Some(sub_m)) => { pointset_run(root_path, sub_m) },
+    _ => { eprintln!("{}", matches.usage()); }
   }
 }
 
-fn pointset_run(matches: &ArgMatches) {
+fn pointset_run(root_path: &PathBuf, matches: &ArgMatches) {
+
   let point_set_manager = {
-    let mut path: PathBuf = env::current_dir().unwrap();//?;
+    let mut path = root_path.to_owned();
+    //let mut path: PathBuf = env::current_dir().unwrap();//?;
     path.push("data");
     path.push("point_set");
     point_set::manager(path)
@@ -104,8 +116,9 @@ fn pointset_run(matches: &ArgMatches) {
   match matches.subcommand() {
     ("create", Some(sub_m)) => { pointset_create_run(&point_set_manager, sub_m) },
     ("list", Some(sub_m)) => { pointset_list_run(&point_set_manager, sub_m) },
+    ("print", Some(sub_m)) => { pointset_print_run(&point_set_manager, sub_m) },
     ("delete", Some(sub_m)) => { pointset_delete_run(&point_set_manager, sub_m) },
-    _ => { println!("{}", matches.usage()); }
+    _ => { eprintln!("{}", matches.usage()); }
   }
 }
 
@@ -116,97 +129,47 @@ fn pointset_create_run(manager: &point_set::Manager, matches: &ArgMatches) {
   let overwrite = matches.is_present("overwrite");
   let point_generator = point_set::random_from_grid(grid_density, count);
   if let Err(e) = manager.save(name, overwrite, point_generator) {
-    println!("couldn't create point set: {}", e);
+    eprintln!("couldn't create point set: {}", e);
   } else {
-    println!("saved {} points as '{}'", count, name);
+    eprintln!("saved {} points as '{}'", count, name);
   }
 }
 
-struct Tabulator {
-  header: Vec<String>,
-  rows: Vec<Vec<String>>,
-  column_widths: Vec<usize>,
-}
+mod tabulator;
 
-impl Tabulator {
-  fn new(header: Vec<String>) -> Tabulator {
-    let column_widths = header.iter().map(|s| s.len()).collect();
-    return Tabulator{header, column_widths, rows: Vec::new()}
-  }
-
-  fn append(&mut self, row: Vec<String>) {
-    for i in 0..self.header.len() {
-      if let Some(s) = row.get(i) {
-        let len = s.len();
-        if len > self.column_widths[i] {
-          self.column_widths[i] = len;
-        }
-      }
-    }
-    self.rows.push(row);
-  }
-
-  fn display(&self) {
-    let text_len: usize = self.column_widths.iter().sum();
-    let margin_len = 3 * self.column_widths.len() - 1;
-    let top = std::iter::repeat("_").take(text_len + margin_len).collect::<String>();
-    println!("+{}+", top);
-    self.display_row(&self.header);
-    self.display_blank_row();
-    for row in &self.rows {
-      self.display_row(row);
-    }
-    let bottom = std::iter::repeat("-").take(text_len + margin_len).collect::<String>();
-    println!("+{}+", bottom);
-  }
-
-  fn display_row(&self, row: &Vec<String>) {
-    let mut result = "|".to_string();
-    for (i, s) in row.iter().enumerate() {
-      result.push_str(&format!(" {} ", s.cyan()));
-      let padding_len = self.column_widths[i] - s.len();
-      let padding = std::iter::repeat(" ").take(padding_len).collect::<String>();
-      result.push_str(&padding);
-      result.push_str("|");
-    }
-    println!("{}", result);
-  }
-
-  fn display_blank_row(&self) {
-    let mut result = "|".to_string();
-    for width in &self.column_widths {
-      let padding_len = width + 2;
-      let padding = std::iter::repeat("-").take(padding_len).collect::<String>();
-      result.push_str(&padding);
-      result.push_str("|");
-    }
-    println!("{}", result);
-  }
-}
+use self::tabulator::Tabulator;
 
 fn pointset_list_run(manager: &point_set::Manager, matches: &ArgMatches) {
-  let point_sets = manager.list().unwrap();
-  /*for info in point_sets {
-    // the datetime formatting ignores our requested format, i wonder why
-    let created = info.created.to_rfc2822().to_string();
-    println!("{} {}", info.name, info.created);
-  }*/
+  let mut point_sets = manager.list().unwrap();
   let mut table = Tabulator::new(vec![
     String::from("name"),
     String::from("count"),
     String::from("created")]);
+  point_sets.sort_by(|a,b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
   for info in point_sets {
     let count = format!("{}", info.count);
     let created = info.created.to_rfc2822().to_string();
     table.append(vec![info.name.to_string(), count, created]);
   }
   table.display();
-  //println!("|{:80}|", "format works as expected. This will be padded".bright_blue())
+}
+
+fn pointset_print_run(manager: &point_set::Manager, matches: &ArgMatches) {
+  let name = matches.value_of("name").unwrap();
+  let result = manager.load(name);
+  match result {
+    Err(e) => { eprintln!("couldn't load point set '{}': {}", name, e); },
+    Ok(point_set) => {
+      for p in point_set.points {
+        println!("{},{}", p.0.to_f64(), p.1.to_f64());
+      }
+    }
+  }
 }
 
 fn pointset_delete_run(manager: &point_set::Manager, matches: &ArgMatches) {
   let name = matches.value_of("name").unwrap();
-  println!("deleting point set '{}'", name);
+  eprintln!("deleting point set '{}'", name);
 }
 
 #[cfg(test)]
