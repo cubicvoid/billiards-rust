@@ -8,9 +8,13 @@ extern crate rand;
 extern crate serde;
 extern crate serde_json;
 
+mod algebra;
+mod billiards;
 mod command_line;
 mod data;
-mod geometry; 
+mod geometry;
+mod vector;
+mod singularity;
 
 use std::env;
 use std::path::{Path, PathBuf};
