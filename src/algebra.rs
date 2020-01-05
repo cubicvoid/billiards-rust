@@ -1,22 +1,14 @@
-use std::ops::{Add, Sub, Neg, Mul, Div};
+use std::ops::{Add, AddAssign, Sub, Neg, Mul, MulAssign, Div};
 
 use rug::Rational;
 
 use vector::V2;
 
-
-pub trait Ring: Zero + One + Neg<Output=Self> + Clone {
-    
-}
-
-impl<T> Ring for T
-where
-    T: Zero + One + Neg<Output=T> + Clone
+/// required invariants:
+///   `zero() + zero() == zero()` (identity)
+///   `a + (-a) == zero()` (inverse)
+pub trait Zero
 {
-
-}
-
-pub trait Zero: Add<Output=Self> + Sized {
   fn zero() -> Self;
 }
 
@@ -28,15 +20,9 @@ impl Zero for f64 {
   fn zero() -> f64 { 0.0 }
 }
 
-impl<T> Zero for V2<T>
-where T: Zero + Clone
-{
-  fn zero() -> V2<T> {
-    V2(T::zero(), T::zero())
-  }
-}
-
-pub trait One: Mul<Output=Self> + Sized {
+/// required invariant:
+///   `one() * one() == one()` (identity)
+pub trait One {
   fn one() -> Self;
 }
 
@@ -48,12 +34,21 @@ impl One for f64 {
   fn one() -> f64 { 1.0 }
 }
 
-impl<T> One for V2<T>
-where
-    T: Zero + One + Neg + Clone,
-    V2<T>: Mul<Output=Self>,
-{
-  fn one() -> V2<T> {
-    V2(T::one(), T::zero())
+pub trait SquaredNorm {
+  type Output;
+  fn squared_norm(&self) -> Self::Output;
+}
+
+impl SquaredNorm for Rational {
+  type Output = Rational;
+  fn squared_norm(&self) -> Rational {
+    Rational::from(self * self)
+  }
+}
+
+impl SquaredNorm for f64 {
+  type Output = f64;
+  fn squared_norm(&self) -> f64 {
+    self * self
   }
 }

@@ -1,34 +1,81 @@
-
+use std::borrow::{Borrow, ToOwned};
 use std::ops::{Add, Sub, Neg, Mul, Div, AddAssign, MulAssign};
 
-#[derive(Clone, PartialEq)]
-pub struct V2<R: Clone>(pub R, pub R);
+use algebra::{Zero, One, SquaredNorm};
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct V2<R>(pub R, pub R);
+
+//pub struct v2<R>(pub &R, pub &R)
+
+impl<R> V2<R>
+where
+    R: Zero
+{
+  pub fn from_real(r: R) -> V2<R> {
+    V2(r, R::zero())
+  }
+}
+
+impl<R> SquaredNorm for V2<R>
+where
+    R: SquaredNorm + ToOwned,
+    R::Output: Add
+{
+  type Output = <<R as SquaredNorm>::Output as Add>::Output;
+  fn squared_norm(&self) -> Self::Output {
+    self.0.squared_norm() + self.1.squared_norm()
+  }
+}
+/*
+impl<'a, R> V2<R>
+where
+    R: SquaredNorm<Output=R> + Add<R, Output=R> + 'a
+{
+  pub fn squared_norm(&'a self) -> R {
+    self.0.clone() * self.0. + self.1.clone() * &self.1
+  }
+}
+*/
 
 impl<'a, R> V2<R>
 where
-    R: Mul<Output=R> + Add<Output=R> + Clone + 'a
+    R: Add<R, Output=R> + Mul<&'a R, Output=R> + ToOwned<Owned=R> + 'a
 {
-  pub fn squared_norm(&'a self) -> R {
-    self.0.clone() * self.0.clone() + self.1.clone() * self.1.clone()
-  }
-
-  pub fn dot(&self, v: &V2<R>) -> R {
-    self.0.clone() * v.0.clone() + self.1.clone() * v.1.clone()
+  pub fn dot(&self, v: &'a V2<R>) -> R {
+    self.0.to_owned() * &v.0 + self.1.to_owned() * &v.1
   }
 }
 
 impl<R> V2<R>
 where
-    R: Neg<Output=R> + Clone
+    R: Neg<Output=R>
 {
   pub fn complex_conjugate(self) -> V2<R> {
     V2(self.0, -self.1)
   }
 }
 
+impl<R> Zero for V2<R>
+where R: Zero
+{
+  fn zero() -> V2<R> {
+    V2(R::zero(), R::zero())
+  }
+}
+
+impl<T> One for V2<T>
+where
+    T: Zero + One
+{
+  fn one() -> V2<T> {
+    V2(T::one(), T::zero())
+  }
+}
+
 impl<R> Add<V2<R>> for V2<R>
 where
-    R: Add<R, Output=R> + Clone
+    R: Add<R, Output=R>
 {
   type Output = V2<R>;
 
@@ -39,7 +86,7 @@ where
 
 impl<'a, R> Add<&'a V2<R>> for V2<R>
 where
-    R: Add<&'a R, Output=R> + Clone + 'a
+    R: Add<&'a R, Output=R>
 {
   type Output = V2<R>;
 
@@ -49,9 +96,19 @@ where
   }
 }
 
+impl<R> AddAssign<V2<R>> for V2<R>
+where
+    R: AddAssign<R> + Clone
+{
+  fn add_assign(&mut self, v: V2<R>) {
+    self.0 += v.0;
+    self.1 += v.1;
+  }
+}
+
 impl<'a, R> AddAssign<&'a V2<R>> for V2<R>
 where
-    R: AddAssign<&'a R> + Clone + 'a
+    R: AddAssign<&'a R> + Clone
 {
   fn add_assign(&mut self, v: &'a V2<R>) {
     self.0 += &v.0;
@@ -61,7 +118,7 @@ where
 
 impl<R> Sub<V2<R>> for V2<R>
 where
-    R: Add<R, Output=R> + Neg<Output=R> + Clone
+    R: Add<Output=R> + Neg<Output=R> + Clone
 {
   type Output = V2<R>;
 
@@ -81,7 +138,10 @@ where
   }
 }
 
-impl<R> Neg for V2<R> where R: Neg<Output=R> + Clone {
+impl<R> Neg for V2<R>
+where
+    R: Neg<Output=R> + Clone
+{
   type Output = V2<R>;
 
   fn neg(self) -> V2<R> {
@@ -89,16 +149,18 @@ impl<R> Neg for V2<R> where R: Neg<Output=R> + Clone {
   }
 }
 
-impl<R> Mul<R> for V2<R>
+
+/*impl<R> Mul<R> for V2<R>
 where
-    R: Mul<R, Output=R> + Clone
+    R: Mul<Output=R> + Clone
 {
   type Output = V2<R>;
   fn mul(self, r: R) -> V2<R> {
     V2(self.0 * r.clone(), self.1 * r)
   }
-}
+}*/
 
+/*
 impl<R> Div<R> for V2<R>
 where
     R: Div<Output=R> + Clone
@@ -107,33 +169,79 @@ where
   fn div(self, r: R) -> V2<R> {
     V2(self.0 / r.clone(), self.1 / r)
   }
-}
+}*/
 
-impl<'a, R> Mul<V2<R>> for V2<R>
+
+/*impl<'a, R, T> Mul<&'a T> for V2<R>
 where
-    R: Mul<R, Output=R> + Add<R, Output=R> + Neg<Output=R> + Clone
+    T: Borrow<V2<R>>,
+    R: Add<Output=R> + Mul<Output=R> + Neg<Output=R> + Clone + 'a
+{
+  type Output = V2<R>;
+  fn mul(&self, v: &'a T) -> V2<R> {
+    let v: &'a V2<R> = v.borrow();
+    V2(
+      self.0.clone() * v.0.clone() + (-self.1.clone() * v.1.clone()),
+      self.0.clone() * v.1.clone() + self.1.clone() * v.0.clone()
+    )
+  }
+}*/
+
+impl<R> Mul<V2<R>> for V2<R>
+where
+    R: Add<Output=R> + Mul<Output=R> + Neg<Output=R> + Clone
 {
   type Output = V2<R>;
   fn mul(self, v: V2<R>) -> V2<R> {
     V2(
       self.0.clone() * v.0.clone() + (-self.1.clone() * v.1.clone()),
-      self.0 * v.1 + self.1 * v.0
+      self.0.clone() * v.1.clone() + self.1.clone() * v.0.clone()
     )
   }
 }
 
-impl<'a, R> Mul<&'a V2<R>> for V2<R>
+impl<R> Div<V2<R>> for V2<R>
 where
-    R: Mul<R, Output=R> + Add<R, Output=R> + Neg<Output=R> + Clone + 'a
+    V2<R>: Mul<V2<R>> + SquaredNorm<Output=R>,
+    R: Add<Output=R> + Mul<Output=R> + Div<Output=R> + Neg<Output=R> + Clone,
+{
+  type Output = <V2<R> as Mul>::Output;
+  fn div(self, v: V2<R>) -> Self::Output {
+    let conj = v.clone().complex_conjugate();
+    let norm = v.squared_norm();
+    let v_inv = V2(conj.0 / norm.clone(), conj.1 / norm);
+    self * v_inv
+  }
+
+}
+
+
+/*impl<'a, 'b, R, T> Mul<&'b T> for &'a V2<R>
+where
+    T: Borrow<V2<R>>,
+    R: Add<Output=R> + Mul<Output=R> + Neg<Output=R> + Clone
 {
   type Output = V2<R>;
-  fn mul(self, v: &'a V2<R>) -> V2<R> {
+  fn mul(&'a self, v: &'b V2<R>) -> V2<R> {
+    let v: &'b V2<R> = v.borrow();
     V2(
       self.0.clone() * v.0.clone() + (-self.1.clone() * v.1.clone()),
-      self.0 * v.1.clone() + self.1 * v.0.clone()
+      self.0.clone() * v.1.clone() + self.1.clone() * v.0.clone()
     )
   }
+}*/
+
+/*
+impl<R> MulAssign<V2<R>> for V2<R>
+where
+    R: Ring
+{
+  fn mul_assign(&mut self, v: V2<R>) {
+    *self = *self * v;
+  }
 }
+*/
+
 /*
 impl<'a, R> MulAssign<&'a V2<R>> for V2<R>
 where

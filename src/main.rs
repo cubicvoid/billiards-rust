@@ -13,8 +13,9 @@ mod billiards;
 mod command_line;
 mod data;
 mod geometry;
-mod vector;
 mod singularity;
+mod util;
+mod vector;
 
 use std::env;
 use std::path::{Path, PathBuf};

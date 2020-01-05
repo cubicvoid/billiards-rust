@@ -36,7 +36,9 @@ fn test_path_on_point(p: &Point) -> bool {
   let apex: V2<Rational> = V2::from(p.to_owned());
   let mut params = Params::new(apex);
 
-  let turns: Vec<i32> = vec![-2, 2, 2, -2];
+  //let turns: Vec<i32> = vec![-9, 6, 9, -6];
+  let turns: Vec<i32> = vec![-6, 3, 6, -3];
+  //let turns: Vec<i32> = vec![-2, 2, 2, -2];
   let mut edge = BaseEdge::new(
     &mut params,
     Pair(
@@ -184,11 +186,14 @@ quit
 pub fn save_points_as_csv<'a, I: Iterator<Item=&'a Point>>(
   points_iter: &mut I, file_path: &PathBuf,
 ) -> Result<(), std::io::Error> {
+  let mut count = 0;
   let file = File::create(file_path)?;
   let mut writer = BufWriter::new(file);
   for p in points_iter {
     write!(writer, "{},{}\n", p.0.to_f64(), p.1.to_f64())?;
+    count += 1;
   }
   writer.flush()?;
+  eprintln!("saved {} points", count);
   Ok(())
 }
