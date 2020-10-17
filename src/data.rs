@@ -15,10 +15,10 @@ impl fmt::Display for DataError {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     //String::from(self.description()).fmt(f)
     match &self {
-      DataError::IOError(e) => e.fmt(f),
-      DataError::JSONError(e) => e.fmt(f),
+      DataError::IOError(e) => write!(f, "{}", e),
+      DataError::JSONError(e) => write!(f, "{}", e),
       DataError::OsStringError(e) => e.clone().into_string().expect("invalid unicode").fmt(f),
-      DataError::Unimplemented(s) => format!("Unimplemented: {}", s).fmt(f)
+      DataError::Unimplemented(s) => write!(f, "Unimplemented: {}", s)
     }
   }
 }

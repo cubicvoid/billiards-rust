@@ -6,8 +6,8 @@ use std::path::PathBuf;
 
 use clap::{Arg, ArgMatches, App, SubCommand};
 
-use data::point_set;
-use data::point_set::PointSet;
+use crate::data::point_set;
+use crate::data::point_set::PointSet;
 
 use self::tabulator::Tabulator;
 

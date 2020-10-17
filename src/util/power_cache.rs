@@ -1,7 +1,8 @@
 use std::ops::{Add, Sub, Neg, Mul, Div, MulAssign};
 use rug::Rational;
-use vector::V2;
-use algebra::One;
+
+use crate::vector::V2;
+use crate::algebra::One;
 
 pub struct PowerCache<T>
 where
@@ -9,6 +10,12 @@ where
 {
   base: T,
   powers: Vec<T>
+}
+
+pub struct TurnCache<T>
+{
+  base: V2<T>,
+  powers: Vec<Option<V2<T>>>
 }
 
 impl<T> PowerCache<T>

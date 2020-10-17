@@ -7,13 +7,13 @@ use std::process::{Command, Stdio};
 use clap::{Arg, ArgMatches, App, SubCommand};
 use rug::Rational;
 
-use algebra::{Zero, One};
-use billiards::Params;
-use billiards::base_edge::BaseEdge;
-use data::point_set;
-use singularity::{Orientation, Pair};
-use data::point_set::{Point, PointSet};
-use vector::V2;
+use crate::algebra::{Zero, One};
+use crate::billiards::Params;
+use crate::billiards::base_edge::BaseEdge;
+use crate::data::point_set;
+use crate::billiards::singularity::{BaseOrientation, BaseValues};
+use crate::data::point_set::{Point, PointSet};
+use crate::vector::V2;
 
 type PointIter = Box<dyn Iterator<Item = Point>>;
 
@@ -37,19 +37,22 @@ fn test_path_on_point(p: &Point) -> bool {
   let mut params = Params::new(apex);
 
   //let turns: Vec<i32> = vec![-9, 6, 9, -6];
-  let turns: Vec<i32> = vec![-6, 3, 6, -3];
-  //let turns: Vec<i32> = vec![-2, 2, 2, -2];
+  //let turns: Vec<i32> = vec![-6, 3, 6, -3];
+  let turns: Vec<i32> = vec![-2, 2, 2, -2];
   let mut edge = BaseEdge::new(
     &mut params,
-    Pair(
+    BaseValues(
       V2(Rational::zero(), Rational::zero()),
       V2(Rational::one(), Rational::zero()),
     ),
-    Orientation::Forward,
+    BaseOrientation::Forward,
   );
   let mut left_points = vec![edge.left_apex()];
   let mut right_points = vec![edge.right_apex()];
   for turn in turns {
+    if (turn.abs() as u32) > edge.params.max_turn_around(edge.to()) {
+      return false;
+    }
     edge.step(turn);
     left_points.push(edge.left_apex());
     right_points.push(edge.right_apex());

@@ -1,20 +1,21 @@
 use std::ops::{Add, Sub, Neg, Mul, Div};
 use rug::Rational;
-use vector::V2;
+use crate::vector::V2;
 
-use algebra::{Zero, One};
-use billiards::{Params, ParamsTrait};
-use singularity::{Singularity::{self, S0, S1}, Orientation, Pair};
+use crate::algebra::{Zero, One};
+use crate::billiards::{Params, ParamsTrait};
+use crate::billiards::singularity::{
+	BaseSingularity::{self, B0, B1}, BaseOrientation, BaseValues};
 
 pub struct BaseEdge<'a, R>
 where
     R: ParamsTrait
 {
-  params: &'a mut Params<R>,
-  coords: Pair<V2<R>>,
+  pub params: &'a mut Params<R>,
+  coords: BaseValues<V2<R>>,
   // the vector from coords[S0] to coords[S1]
   //offset: V2<R>,
-  orientation: Orientation,
+  orientation: BaseOrientation,
 }
 
 impl<'b, 'a: 'b, K> BaseEdge<'a, K>
@@ -23,8 +24,8 @@ where
 {
   pub fn new(
       params: &'a mut Params<K>,
-      coords: Pair<V2<K>>,
-      orientation: Orientation) -> BaseEdge<'a, K> {
+      coords: BaseValues<V2<K>>,
+      orientation: BaseOrientation) -> BaseEdge<'a, K> {
     BaseEdge{params, coords, orientation}
   }
 
@@ -33,7 +34,7 @@ where
   pub fn new_default(params: &'a mut Params<K>) -> BaseEdge<'a, K> {
     let origin = V2(K::zero(), K::zero());
     let one = V2(K::one(), K::zero());
-    Self::new(params, Pair(origin, one), Orientation::Forward)
+    Self::new(params, BaseValues(origin, one), BaseOrientation::Forward)
   }
 
   pub fn offset(&self) -> V2<K> {
@@ -53,23 +54,23 @@ where
 
   pub fn left_apex(&self) -> V2<K> {
     let mut apex = self.params.apex().clone();
-    if self.orientation.from() == S1 {
+    if self.orientation.from() == B1 {
       apex = apex.complex_conjugate();
     }
-    let offset = self.coords[S1].clone() - &self.coords[S0];
-    self.coords[S0].clone() + apex * offset
+    let offset = self.coords[B1].clone() - &self.coords[B0];
+    self.coords[B0].clone() + apex * offset
   }
 
   pub fn right_apex(&self) -> V2<K> {
     let mut apex = self.params.apex().clone();
-    if self.orientation.from() == S0 {
+    if self.orientation.from() == B0 {
       apex = apex.complex_conjugate();
     }
-    let offset = self.coords[S1].clone() - &self.coords[S0];
-    self.coords[S0].clone() + apex * offset
+    let offset = self.coords[B1].clone() - &self.coords[B0];
+    self.coords[B0].clone() + apex * offset
   }
 
-  pub fn from(&self) -> Singularity {
+  pub fn from(&self) -> BaseSingularity {
     self.orientation.from()
   }
 
@@ -77,7 +78,7 @@ where
     self.coords[self.orientation.from()].clone()
   }
 
-  pub fn to(&self) -> Singularity {
+  pub fn to(&self) -> BaseSingularity {
     self.orientation.to()
   }
 
@@ -92,18 +93,19 @@ mod tests {
 
   #[test]
   fn test_base_edge() {
-    let mut params = Params::new(V2(Rational::from((1, 2)), Rational::from((1, 2))));
+    let mut params = Params::new(
+			V2(Rational::from((1, 2)), Rational::from((1, 2))));
     let mut edge = BaseEdge::new_default(&mut params);
 
-    assert_eq!(edge.orientation, Orientation::Forward);
-    assert_eq!(edge.from(), S0, "initial edge should point from S0");
-    assert_eq!(edge.to(), S1, "initial edge should point to S1");
+    assert_eq!(edge.orientation, BaseOrientation::Forward);
+    assert_eq!(edge.from(), B0, "initial edge should point from B0");
+    assert_eq!(edge.to(), B1, "initial edge should point to B1");
     assert_eq!(
       edge.offset(),
       V2(Rational::from(1), Rational::from(0)));
 
     assert_eq!(
-      edge.params.turn_vec(S1, -1),
+      edge.params.turn_vec(B1, -1),
       V2(Rational::from(0), Rational::from(-1)),
       ""
     );

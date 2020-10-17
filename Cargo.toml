@@ -2,6 +2,7 @@
 name = "billiards"
 version = "0.1.0"
 authors = ["faeraga <faeraga@faec.me>"]
+edition = "2018"
 
 [dependencies]
 chrono = { version = "0.4.10", features = ["serde"] }
@@ -11,4 +12,6 @@ serde_json = "1.0"
 rand = "0.7.2"
 clap = "2.33.0"
 colored = "1.9"
+rustyline = "6.3.0"
+enum-map = "0.6.3"
 #maplit = "1.0.2"

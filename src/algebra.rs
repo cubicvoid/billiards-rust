@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Sub, Neg, Mul, MulAssign, Div};
 
 use rug::Rational;
 
-use vector::V2;
+//use vector::V2;
 
 /// required invariants:
 ///   `zero() + zero() == zero()` (identity)

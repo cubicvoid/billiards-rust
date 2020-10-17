@@ -1,7 +1,7 @@
 use std::borrow::{Borrow, ToOwned};
 use std::ops::{Add, Sub, Neg, Mul, Div, AddAssign, MulAssign};
 
-use algebra::{Zero, One, SquaredNorm};
+use crate::algebra::{Zero, One, SquaredNorm};
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct V2<R>(pub R, pub R);
@@ -212,7 +212,6 @@ where
     let v_inv = V2(conj.0 / norm.clone(), conj.1 / norm);
     self * v_inv
   }
-
 }
 
 
